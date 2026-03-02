@@ -9,19 +9,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = file_get_contents('php://input');
     file_put_contents($db_file, $data);
     header('Content-Type: application/json');
-    echo json_encode(["status" => "success"]);
+    // تم استخدام طريقة كتابة لا تحتوي على علامة الإغلاق لمنع ظهور النص في المتصفح
+    $response = array();
+    $response['status'] = 'success';
+    echo json_encode($response);
     exit;
 } 
 
 // إرسال القراءات المحفوظة عند طلبها
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
-    header('Content-Type: application/json');
-    if (file_exists($db_file)) {
-        echo file_get_contents($db_file);
-    } else {
-        echo "[]";
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['api'])) {
+        header('Content-Type: application/json');
+        if (file_exists($db_file)) {
+            echo file_get_contents($db_file);
+        } else {
+            echo '[]';
+        }
+        exit;
     }
-    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -34,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- التصميم المطور والأنثوي (CSS) - محتفظ به كما هو --- */
+        /* --- التصميم المطور والأنثوي (CSS) --- */
         :root {
             --primary-color: #ec4899; 
             --primary-hover: #db2777; 
@@ -402,7 +407,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
             return [...dataArray].sort((a, b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
         };
 
-        // دالة سحب البيانات من السيرفر (مع حماية البيانات القديمة)
         async function loadDataFromServer() {
             try {
                 const response = await fetch('?api=true');
@@ -414,10 +418,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
                 let localData = [];
                 try { localData = JSON.parse(localStorage.getItem('bloodSugarReadings')) || []; } catch(e){}
                 
-                // دمج البيانات الذكي لضمان عدم ضياع أي بيانات محلية سابقة
                 if (serverData.length === 0 && localData.length > 0) {
                     readings = localData;
-                    await saveDataToServer(); // رفع البيانات المحلية للسيرفر
+                    await saveDataToServer(); 
                 } else if (serverData.length > 0 && localData.length > 0) {
                     if(localData.length > serverData.length) {
                         readings = localData;
@@ -443,7 +446,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
             }
         }
 
-        // دالة الحفظ المزدوج (سيرفر + محلي)
         async function saveDataToServer() {
             localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
             try {
@@ -718,7 +720,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['api'])) {
             });
         }
 
-        // تشغيل وتهيئة النظام عند فتح الصفحة وجلب البيانات من السيرفر
         loadDataFromServer();
     </script>
 </body>
