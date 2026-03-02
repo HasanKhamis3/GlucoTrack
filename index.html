@@ -1,94 +1,336 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blood Sugar Tracker - Reports</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Blood Sugar Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* --- التصميم (CSS) --- */
+        :root {
+            --primary-color: #0056b3;
+            --primary-hover: #004494;
+            --secondary-color: #f8f9fa;
+            --text-main: #333333;
+            --text-muted: #6c757d;
+            --bg-body: #f4f7f6;
+            --bg-card: #ffffff;
+            --border-color: #dee2e6;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-family); background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; }
+        h2, h3, h4 { color: var(--primary-color); margin-bottom: 0.5rem; }
+        .required { color: red; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header p { color: var(--text-muted); }
+
+        /* Navigation */
+        .navbar { background-color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { color: white; font-size: 1.5rem; font-weight: bold; }
+        .nav-links { list-style: none; display: flex; gap: 1.5rem; }
+        .nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 500; cursor: pointer; transition: color 0.3s ease; }
+        .nav-links a:hover, .nav-links a.active { color: white; text-decoration: underline; }
+
+        /* Cards & Forms */
+        .card { background: var(--bg-card); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .full-width { grid-column: 1 / -1; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 0.5rem; color: #555; }
+        input, textarea { padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: var(--font-family); font-size: 1rem; }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2); }
+
+        /* Buttons */
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s ease; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: var(--secondary-color); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: #e2e6ea; }
+        .btn-block { width: 100%; display: block; }
+
+        /* Summary & Filters */
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .summary-card { background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border-left: 5px solid var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--text-main); margin-top: 0.5rem; }
+        .filter-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; }
+        .filter-actions { display: flex; gap: 0.5rem; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; min-width: 600px; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--secondary-color); font-weight: 600; color: var(--text-main); }
+        tbody tr:hover { background-color: #f8f9fa; }
+
+        @media (max-width: 768px) {
+            .filter-grid { flex-direction: column; align-items: stretch; }
+            .filter-actions { flex-direction: column; }
+            .nav-container { flex-direction: column; gap: 1rem; text-align: center; }
+        }
+    </style>
 </head>
 <body>
+
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">GlucoTrack</h1>
+            <div class="logo">GlucoTrack</div>
             <ul class="nav-links">
-                <li><a href="index.html" class="active">Reports</a></li>
-                <li><a href="add-reading.html">Add Reading</a></li>
+                <li><a id="nav-reports" class="active" onclick="switchView('reports')">Reports</a></li>
+                <li><a id="nav-add" onclick="switchView('add')">Add Reading</a></li>
             </ul>
         </div>
     </nav>
 
     <main class="container">
-        <header class="page-header">
-            <h2>Blood Sugar Reports</h2>
-            <p>Analyze your readings over time.</p>
-        </header>
+        
+        <div id="reports-view">
+            <header class="page-header">
+                <h2>Blood Sugar Reports</h2>
+                <p>Analyze your readings over time.</p>
+            </header>
 
-        <section class="card filter-section">
-            <h3>Filter Readings</h3>
-            <form id="filterForm" class="filter-grid">
-                <div class="form-group">
-                    <label for="filterMonth">By Month:</label>
-                    <input type="month" id="filterMonth">
-                </div>
-                <div class="form-group">
-                    <label for="filterStartDate">Start Date:</label>
-                    <input type="date" id="filterStartDate">
-                </div>
-                <div class="form-group">
-                    <label for="filterEndDate">End Date:</label>
-                    <input type="date" id="filterEndDate">
-                </div>
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <button type="button" id="clearFilters" class="btn btn-secondary">Clear</button>
-                </div>
-            </form>
-        </section>
+            <section class="card filter-section">
+                <h3>Filter Readings</h3>
+                <form id="filterForm" class="filter-grid">
+                    <div class="form-group">
+                        <label for="filterMonth">By Month:</label>
+                        <input type="month" id="filterMonth">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterStartDate">Start Date:</label>
+                        <input type="date" id="filterStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterEndDate">End Date:</label>
+                        <input type="date" id="filterEndDate">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <button type="button" id="clearFilters" class="btn btn-secondary">Clear</button>
+                    </div>
+                </form>
+            </section>
 
-        <section class="summary-grid">
-            <div class="summary-card">
-                <h4>Average (mg/dL)</h4>
-                <div class="stat-value" id="avgMgdl">--</div>
-            </div>
-            <div class="summary-card">
-                <h4>Average (mmol/L)</h4>
-                <div class="stat-value" id="avgMmol">--</div>
-            </div>
-            <div class="summary-card">
-                <h4>Maximum (mg/dL)</h4>
-                <div class="stat-value" id="maxMgdl">--</div>
-            </div>
-            <div class="summary-card">
-                <h4>Minimum (mg/dL)</h4>
-                <div class="stat-value" id="minMgdl">--</div>
-            </div>
-        </section>
+            <section class="summary-grid">
+                <div class="summary-card"><h4>Average (mg/dL)</h4><div class="stat-value" id="avgMgdl">--</div></div>
+                <div class="summary-card"><h4>Average (mmol/L)</h4><div class="stat-value" id="avgMmol">--</div></div>
+                <div class="summary-card"><h4>Maximum (mg/dL)</h4><div class="stat-value" id="maxMgdl">--</div></div>
+                <div class="summary-card"><h4>Minimum (mg/dL)</h4><div class="stat-value" id="minMgdl">--</div></div>
+            </section>
 
-        <section class="card chart-section">
-            <canvas id="bloodSugarChart"></canvas>
-        </section>
+            <section class="card chart-section">
+                <div style="height: 300px;"><canvas id="bloodSugarChart"></canvas></div>
+            </section>
 
-        <section class="card table-section">
-            <h3>Reading History</h3>
-            <div class="table-responsive">
-                <table id="reportsTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Reading (mg/dL)</th>
-                            <th>mmol/L</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportsTableBody">
-                        </tbody>
-                </table>
-            </div>
-        </section>
+            <section class="card table-section">
+                <h3>Reading History</h3>
+                <div class="table-responsive">
+                    <table id="reportsTable">
+                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
+                        <tbody id="reportsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div id="add-view" style="display: none;">
+            <header class="page-header">
+                <h2>Add New Reading</h2>
+                <p>Log your current blood sugar levels.</p>
+            </header>
+
+            <section class="card form-section">
+                <form id="addReadingForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="readingDate">Date <span class="required">*</span></label>
+                            <input type="date" id="readingDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="readingTime">Time <span class="required">*</span></label>
+                            <input type="time" id="readingTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="readingValue">Reading (mg/dL) <span class="required">*</span></label>
+                            <input type="number" id="readingValue" min="1" step="1" placeholder="e.g. 105" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="readingNotes">Notes (Optional)</label>
+                            <textarea id="readingNotes" rows="3" placeholder="Fasting, post-meal, etc."></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Save Reading</button>
+                </form>
+            </section>
+
+            <section class="card table-section">
+                <h3>All Readings</h3>
+                <div class="table-responsive">
+                    <table id="allReadingsTable">
+                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
+                        <tbody id="allReadingsTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
     </main>
 
-    <script src="script.js"></script>
+    <script>
+        // المتغيرات الأساسية
+        let readings = JSON.parse(localStorage.getItem('bloodSugarReadings')) || [];
+        let myChart = null;
+
+        // دوال مساعدة
+        const convertToMmol = (mgdl) => (mgdl / 18).toFixed(1);
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        const formatTime = (timeString) => {
+            const [hour, minute] = timeString.split(':');
+            const date = new Date(); date.setHours(hour, minute);
+            return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        };
+        const sortReadingsDescending = (dataArray) => dataArray.sort((a, b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
+
+        // التنقل بين الصفحتين
+        function switchView(view) {
+            document.getElementById('reports-view').style.display = view === 'reports' ? 'block' : 'none';
+            document.getElementById('add-view').style.display = view === 'add' ? 'block' : 'none';
+            document.getElementById('nav-reports').className = view === 'reports' ? 'active' : '';
+            document.getElementById('nav-add').className = view === 'add' ? 'active' : '';
+            
+            if (view === 'reports') {
+                document.getElementById('filterForm').reset();
+                updateDashboard(readings);
+            }
+        }
+
+        // --- منطق إضافة قراءة ---
+        const dateInput = document.getElementById('readingDate');
+        const timeInput = document.getElementById('readingTime');
+        
+        function setDateTimeInputs() {
+            const now = new Date();
+            dateInput.value = now.toISOString().split('T')[0];
+            timeInput.value = now.toTimeString().slice(0, 5);
+        }
+        setDateTimeInputs();
+
+        document.getElementById('addReadingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const readingVal = parseFloat(document.getElementById('readingValue').value);
+            
+            if (isNaN(readingVal) || readingVal <= 0) return alert("Please enter a valid numeric reading.");
+
+            readings.push({
+                id: Date.now().toString(),
+                date: dateInput.value,
+                time: timeInput.value,
+                reading: readingVal,
+                notes: document.getElementById('readingNotes').value.trim()
+            });
+
+            readings = sortReadingsDescending(readings);
+            localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
+            
+            renderTable(readings, 'allReadingsTableBody');
+            this.reset();
+            setDateTimeInputs();
+            alert("Reading saved successfully!");
+        });
+
+        // --- منطق التقارير والفلترة ---
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const monthVal = document.getElementById('filterMonth').value;
+            const startVal = document.getElementById('filterStartDate').value;
+            const endVal = document.getElementById('filterEndDate').value;
+
+            let filtered = readings;
+            if (monthVal) filtered = filtered.filter(item => item.date.startsWith(monthVal));
+            else {
+                if (startVal) filtered = filtered.filter(item => new Date(item.date) >= new Date(startVal));
+                if (endVal) filtered = filtered.filter(item => new Date(item.date) <= new Date(endVal));
+            }
+            updateDashboard(filtered);
+        });
+
+        document.getElementById('clearFilters').addEventListener('click', function() {
+            document.getElementById('filterForm').reset();
+            updateDashboard(readings);
+        });
+
+        // تحديث لوحة التحكم
+        function updateDashboard(data) {
+            const sortedData = sortReadingsDescending([...data]);
+            renderTable(sortedData, 'reportsTableBody');
+            updateSummaryStats(sortedData);
+            renderChart([...sortedData].reverse());
+        }
+
+        // رسم الجداول
+        function renderTable(data, tbodyId) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No readings found.</td></tr>';
+                return;
+            }
+            data.forEach(item => {
+                tbody.innerHTML += `<tr>
+                    <td>${formatDate(item.date)}</td>
+                    <td>${formatTime(item.time)}</td>
+                    <td><strong>${item.reading}</strong></td>
+                    <td>${convertToMmol(item.reading)}</td>
+                    <td>${item.notes || '-'}</td>
+                </tr>`;
+            });
+        }
+
+        // تحديث الإحصائيات
+        function updateSummaryStats(data) {
+            if (data.length === 0) {
+                document.getElementById('avgMgdl').textContent = '--';
+                document.getElementById('avgMmol').textContent = '--';
+                document.getElementById('maxMgdl').textContent = '--';
+                document.getElementById('minMgdl').textContent = '--';
+                return;
+            }
+            const vals = data.map(i => i.reading);
+            const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+            document.getElementById('avgMgdl').textContent = avg;
+            document.getElementById('avgMmol').textContent = convertToMmol(avg);
+            document.getElementById('maxMgdl').textContent = Math.max(...vals);
+            document.getElementById('minMgdl').textContent = Math.min(...vals);
+        }
+
+        // رسم المخطط البياني (Chart.js)
+        function renderChart(data) {
+            if (myChart) myChart.destroy();
+            const ctx = document.getElementById('bloodSugarChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(i => `${formatDate(i.date).split(',')[0]} ${formatTime(i.time)}`),
+                    datasets: [{
+                        label: 'Blood Sugar (mg/dL)',
+                        data: data.map(i => i.reading),
+                        borderColor: '#0056b3', backgroundColor: 'rgba(0, 86, 179, 0.1)',
+                        borderWidth: 2, pointRadius: 4, fill: true, tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // التهيئة المبدئية عند فتح الصفحة
+        readings = sortReadingsDescending(readings);
+        renderTable(readings, 'allReadingsTableBody');
+        updateDashboard(readings);
+    </script>
 </body>
 </html>
