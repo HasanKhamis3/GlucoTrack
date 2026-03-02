@@ -2,26 +2,25 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GlucoTrack - Blood Sugar Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- التصميم المطور والاحترافي (CSS) --- */
+        /* --- التصميم المطور والأنثوي (CSS) --- */
         :root {
-            --primary-color: #2563eb; /* أزرق عصري */
-            --primary-hover: #1d4ed8;
-            --secondary-color: #f8fafc;
-            --background-color: #f1f5f9; /* خلفية رمادية مزرقة مريحة */
-            --surface-color: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --radius: 12px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --primary-color: #ec4899; /* وردي ناعم وجذاب */
+            --primary-hover: #db2777; /* وردي غامق عند التمرير */
+            --secondary-color: #fdf2f8; /* خلفية وردية فاتحة جداً للعناصر */
+            --background-color: #fef1f8; /* خلفية الموقع */
+            --surface-color: #ffffff; /* لون البطاقات */
+            --text-main: #374151; /* رمادي داكن مريح للقراءة */
+            --text-muted: #6b7280;
+            --border-color: #fbcfe8; /* حدود وردية فاتحة */
+            --radius: 16px; /* زوايا دائرية أكثر نعومة */
+            --shadow-sm: 0 2px 8px rgba(236, 72, 153, 0.08);
+            --shadow-md: 0 8px 20px rgba(236, 72, 153, 0.12);
             --font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
@@ -35,17 +34,17 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        h2, h3, h4 { color: var(--text-main); margin-bottom: 0.5rem; font-weight: 600; }
+        h2, h3, h4 { color: var(--db2777); margin-bottom: 0.5rem; font-weight: 600; }
         .required { color: #ef4444; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; width: 100%; }
         
-        .page-header { margin-bottom: 2rem; }
-        .page-header h2 { font-size: 1.8rem; letter-spacing: -0.025em; color: var(--primary-color); }
+        .page-header { margin-bottom: 2rem; text-align: center; }
+        .page-header h2 { font-size: 2rem; letter-spacing: -0.025em; color: var(--primary-hover); }
         .page-header p { color: var(--text-muted); font-size: 1.05rem; }
 
-        /* Navigation - شريط تنقل عصري */
+        /* Navigation - شريط تنقل عصري وجذاب */
         .navbar { 
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #db2777 0%, #ec4899 100%);
             box-shadow: var(--shadow-md); 
             position: sticky; 
             top: 0; 
@@ -58,6 +57,7 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
+            flex-wrap: wrap;
         }
         .logo { 
             color: white; 
@@ -68,117 +68,149 @@
             align-items: center;
             gap: 8px;
         }
-        .nav-links { list-style: none; display: flex; gap: 1rem; }
+        .nav-links { list-style: none; display: flex; gap: 0.5rem; }
         .nav-links a { 
-            color: rgba(255,255,255,0.7); 
+            color: rgba(255,255,255,0.85); 
             text-decoration: none; 
-            font-weight: 500; 
+            font-weight: 600; 
             cursor: pointer; 
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
             transition: all 0.3s ease; 
+            font-size: 0.95rem;
         }
         .nav-links a:hover, .nav-links a.active { 
             color: var(--primary-color); 
             background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Cards & Forms - بطاقات ناعمة */
+        /* Cards & Forms - بطاقات ناعمة وجذابة */
         .card { 
             background: var(--surface-color); 
             border-radius: var(--radius); 
             padding: 1.75rem; 
             margin-bottom: 2rem; 
             box-shadow: var(--shadow-sm); 
-            border: 1px solid var(--border-color); 
-            transition: box-shadow 0.3s ease;
+            border: 1px solid rgba(251, 207, 232, 0.5); 
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
         }
-        .card:hover { box-shadow: var(--shadow-md); }
+        .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+        @media(min-width: 600px){ .form-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } }
+        
         .full-width { grid-column: 1 / -1; }
         .form-group { display: flex; flex-direction: column; }
-        label { font-weight: 500; margin-bottom: 0.5rem; color: var(--text-main); font-size: 0.95rem;}
+        label { font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-hover); font-size: 0.95rem;}
         
         input, textarea { 
-            padding: 0.75rem 1rem; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
+            padding: 0.85rem 1rem; 
+            border: 2px solid var(--border-color); 
+            border-radius: 12px; 
             font-family: var(--font-family); 
             font-size: 1rem; 
             background-color: var(--secondary-color);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            color: var(--text-main);
         }
         input:focus, textarea:focus { 
             outline: none; 
             border-color: var(--primary-color); 
             background-color: white;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); 
+            box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15); 
         }
 
-        /* Buttons - أزرار تفاعلية */
+        /* Buttons - أزرار تفاعلية ناعمة */
         .btn { 
-            padding: 0.75rem 1.5rem; 
+            padding: 0.85rem 1.5rem; 
             border: none; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             font-size: 1rem; 
             font-weight: 600; 
             cursor: pointer; 
-            transition: all 0.2s ease; 
+            transition: all 0.3s ease; 
             display: inline-flex;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
         }
-        .btn-primary { background-color: var(--primary-color); color: white; box-shadow: var(--shadow-sm); }
-        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-        .btn-secondary { background-color: var(--surface-color); color: var(--text-main); border: 1px solid var(--border-color); }
-        .btn-secondary:hover { background-color: var(--secondary-color); border-color: #cbd5e1;}
-        .btn-block { width: 100%; display: block; padding: 1rem; font-size: 1.05rem;}
+        .btn-primary { background-color: var(--primary-color); color: white; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3); }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(236, 72, 153, 0.4); }
+        .btn-secondary { background-color: var(--secondary-color); color: var(--primary-hover); border: 2px solid var(--border-color); font-weight: 600;}
+        .btn-secondary:hover { background-color: #fce7f3; border-color: var(--primary-color); color: var(--primary-color);}
+        .btn-block { width: 100%; display: block; padding: 1rem; font-size: 1.1rem; border-radius: 16px;}
 
         /* Summary Stats - إحصائيات بصرية */
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+        @media(min-width: 768px){ .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+        
         .summary-card { 
-            background: var(--surface-color); 
-            padding: 1.5rem; 
+            background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 100%); 
+            padding: 1.5rem 1rem; 
             border-radius: var(--radius); 
-            text-align: left; 
-            border-left: 4px solid var(--primary-color); 
+            text-align: center; 
+            border: 1px solid var(--border-color);
+            border-bottom: 4px solid var(--primary-color); 
             box-shadow: var(--shadow-sm); 
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        .summary-card h4 { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;}
-        .stat-value { font-size: 2.25rem; font-weight: 700; color: var(--text-main); }
+        .summary-card h4 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;}
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--primary-hover); }
 
         /* Filters */
-        .filter-section h3 { margin-bottom: 1.25rem; font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;}
+        .filter-section h3 { margin-bottom: 1.25rem; font-size: 1.25rem; border-bottom: 2px dashed var(--border-color); padding-bottom: 0.75rem; color: var(--primary-hover);}
         .filter-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; }
-        .filter-actions { display: flex; gap: 0.75rem; }
+        .filter-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .filter-actions button { flex: 1; }
 
-        /* Tables - جداول احترافية مرتبة */
-        .table-section h3 { margin-bottom: 1.25rem; font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;}
-        .table-responsive { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; background: white; }
-        th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        /* Tables - جداول احترافية متناسبة مع الجوال */
+        .table-section h3 { margin-bottom: 1.25rem; font-size: 1.25rem; border-bottom: 2px dashed var(--border-color); padding-bottom: 0.75rem; color: var(--primary-hover);}
+        .table-responsive { 
+            overflow-x: auto; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            background: white;
+            /* تصميم شريط التمرير للجداول */
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--secondary-color);
+        }
+        .table-responsive::-webkit-scrollbar { height: 8px; }
+        .table-responsive::-webkit-scrollbar-track { background: var(--secondary-color); border-radius: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 8px; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
         th { 
             background-color: var(--secondary-color); 
-            font-weight: 600; 
-            color: var(--text-muted); 
+            font-weight: 700; 
+            color: var(--primary-hover); 
             text-transform: uppercase;
             font-size: 0.85rem;
             letter-spacing: 0.05em;
         }
         tbody tr { transition: background-color 0.2s ease; }
         tbody tr:hover { background-color: var(--secondary-color); }
-        td strong { color: var(--primary-color); font-size: 1.05rem; }
+        td strong { color: var(--primary-color); font-size: 1.1rem; font-weight: 700; background: #fdf2f8; padding: 0.2rem 0.6rem; border-radius: 8px;}
 
+        /* دعم كامل وشامل للهواتف بجميع أنواعها */
         @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .nav-container { flex-direction: column; gap: 1rem; text-align: center; padding: 1rem 0.5rem; }
+            .nav-links { width: 100%; justify-content: center; gap: 0.25rem; flex-wrap: wrap;}
+            .page-header h2 { font-size: 1.6rem; }
+            
             .filter-grid { flex-direction: column; align-items: stretch; }
-            .filter-actions { flex-direction: column; }
-            .nav-container { flex-direction: column; gap: 1rem; text-align: center; }
-            .nav-links { width: 100%; justify-content: center; }
+            .filter-actions { flex-direction: row; }
+            
+            .card { padding: 1.25rem; }
+            .summary-card { padding: 1rem; }
+            .stat-value { font-size: 1.75rem; }
+            
+            /* تحسين مظهر المخطط البياني في الجوال */
+            .chart-container-wrapper { height: 250px !important; }
         }
     </style>
 </head>
@@ -187,7 +219,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                 GlucoTrack
             </div>
             <ul class="nav-links">
@@ -201,12 +233,12 @@
         
         <div id="reports-view">
             <header class="page-header">
-                <h2>Blood Sugar Reports</h2>
-                <p>Analyze and track your readings over time.</p>
+                <h2>My Blood Sugar Reports ✨</h2>
+                <p>Analyze and track your beautiful journey to health.</p>
             </header>
 
             <section class="card filter-section">
-                <h3>Filter Readings</h3>
+                <h3>🔍 Filter Readings</h3>
                 <form id="filterForm" class="filter-grid">
                     <div class="form-group">
                         <label for="filterMonth">By Month:</label>
@@ -221,7 +253,7 @@
                         <input type="date" id="filterEndDate">
                     </div>
                     <div class="filter-actions">
-                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <button type="submit" class="btn btn-primary">Apply</button>
                         <button type="button" id="clearFilters" class="btn btn-secondary">Clear</button>
                     </div>
                 </form>
@@ -235,11 +267,13 @@
             </section>
 
             <section class="card chart-section">
-                <div style="height: 350px;"><canvas id="bloodSugarChart"></canvas></div>
+                <div class="chart-container-wrapper" style="height: 350px; position: relative; width: 100%;">
+                    <canvas id="bloodSugarChart"></canvas>
+                </div>
             </section>
 
             <section class="card table-section">
-                <h3>Reading History</h3>
+                <h3>📖 Reading History</h3>
                 <div class="table-responsive">
                     <table id="reportsTable">
                         <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
@@ -251,8 +285,8 @@
 
         <div id="add-view" style="display: none;">
             <header class="page-header">
-                <h2>Add New Reading</h2>
-                <p>Log your current blood sugar levels accurately.</p>
+                <h2>Add New Reading 🌸</h2>
+                <p>Log your current blood sugar levels beautifully.</p>
             </header>
 
             <section class="card form-section">
@@ -272,15 +306,15 @@
                         </div>
                         <div class="form-group full-width">
                             <label for="readingNotes">Notes (Optional)</label>
-                            <textarea id="readingNotes" rows="3" placeholder="Fasting, post-meal, etc."></textarea>
+                            <textarea id="readingNotes" rows="3" placeholder="Fasting, post-meal, feeling great, etc."></textarea>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-block">Save Reading</button>
+                    <button type="submit" class="btn btn-primary btn-block">💖 Save Reading</button>
                 </form>
             </section>
 
             <section class="card table-section">
-                <h3>All Readings</h3>
+                <h3>📝 All Readings</h3>
                 <div class="table-responsive">
                     <table id="allReadingsTable">
                         <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
@@ -293,11 +327,11 @@
     </main>
 
     <script>
-        // المتغيرات الأساسية
+        // المتغيرات الأساسية مع الحفاظ على البيانات المدخلة في المتصفح
         let readings = JSON.parse(localStorage.getItem('bloodSugarReadings')) || [];
         let myChart = null;
 
-        // دوال مساعدة
+        // دوال مساعدة لحساب القيم والتنسيق
         const convertToMmol = (mgdl) => (mgdl / 18).toFixed(1);
         
         const formatDate = (dateString) => {
@@ -311,12 +345,12 @@
             return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         };
 
-        // دالة ترتيب القراءات من الأحدث إلى الأقدم (تعتمد على التاريخ والوقت)
+        // دالة ترتيب القراءات من الأحدث إلى الأقدم (تعتمد على التاريخ والوقت تلقائياً)
         const sortReadingsDescending = (dataArray) => {
             return [...dataArray].sort((a, b) => {
                 const dateTimeA = new Date(`${a.date}T${a.time}`);
                 const dateTimeB = new Date(`${b.date}T${b.time}`);
-                return dateTimeB - dateTimeA; // ترتيب تنازلي الأحدث أولاً
+                return dateTimeB - dateTimeA; // الترتيب التنازلي للحصول على الأحدث بالقمة
             });
         };
 
@@ -326,6 +360,9 @@
             document.getElementById('add-view').style.display = view === 'add' ? 'block' : 'none';
             document.getElementById('nav-reports').className = view === 'reports' ? 'active' : '';
             document.getElementById('nav-add').className = view === 'add' ? 'active' : '';
+            
+            // التمرير لأعلى الصفحة عند التبديل (مفيد للجوال)
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             
             if (view === 'reports') {
                 document.getElementById('filterForm').reset();
@@ -339,7 +376,6 @@
         
         function setDateTimeInputs() {
             const now = new Date();
-            // تصحيح المنطقة الزمنية لضمان إدخال التاريخ المحلي الصحيح
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             dateInput.value = now.toISOString().split('T')[0];
             
@@ -371,14 +407,16 @@
             this.reset();
             setDateTimeInputs();
             
-            // إضافة تأثير بصري صغير عند الحفظ بنجاح
+            // تأثير بصري لطيف عند الحفظ
             const btn = this.querySelector('button[type="submit"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = 'Saved Successfully ✓';
+            btn.innerHTML = 'Saved Successfully 💖';
             btn.style.backgroundColor = '#10b981';
+            btn.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.3)';
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.style.backgroundColor = '';
+                btn.style.boxShadow = '';
             }, 2000);
         });
 
@@ -406,13 +444,13 @@
 
         // تحديث لوحة التحكم
         function updateDashboard(data) {
-            // ضمان ترتيب البيانات (الأحدث أعلى الجدول)
+            // ضمان الترتيب التلقائي من الأحدث للأقدم داخل الجداول
             const sortedData = sortReadingsDescending(data);
             
             renderTable(sortedData, 'reportsTableBody');
             updateSummaryStats(sortedData);
             
-            // المخطط البياني يتطلب الترتيب الزمني الطبيعي (من الأقدم للأحدث - من اليسار لليمين)
+            // المخطط البياني يتطلب عرض الزمن تسلسلياً (من الأقدم للأحدث ليقرأ من اليسار لليمين)
             renderChart([...sortedData].reverse());
         }
 
@@ -421,7 +459,7 @@
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #64748b; padding: 2rem;">No readings found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #db2777; padding: 2rem;">No readings found for this period.</td></tr>';
                 return;
             }
             data.forEach(item => {
@@ -435,7 +473,7 @@
             });
         }
 
-        // تحديث الإحصائيات
+        // تحديث الإحصائيات الحسابية
         function updateSummaryStats(data) {
             if (data.length === 0) {
                 document.getElementById('avgMgdl').textContent = '--';
@@ -452,15 +490,15 @@
             document.getElementById('minMgdl').textContent = Math.min(...vals);
         }
 
-        // رسم المخطط البياني (Chart.js)
+        // رسم المخطط البياني (Chart.js) باللون الوردي المتدرج
         function renderChart(data) {
             if (myChart) myChart.destroy();
             const ctx = document.getElementById('bloodSugarChart').getContext('2d');
             
-            // تحديد تدرج لوني جميل للمخطط
+            // التدرج اللوني الأنثوي (الوردي) للمخطط
             const gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientFill.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
-            gradientFill.addColorStop(1, 'rgba(37, 99, 235, 0)');
+            gradientFill.addColorStop(0, 'rgba(236, 72, 153, 0.4)'); // Pink 500 opacity
+            gradientFill.addColorStop(1, 'rgba(236, 72, 153, 0.0)');
 
             myChart = new Chart(ctx, {
                 type: 'line',
@@ -469,15 +507,16 @@
                     datasets: [{
                         label: 'Blood Sugar (mg/dL)',
                         data: data.map(i => i.reading),
-                        borderColor: '#2563eb', 
+                        borderColor: '#ec4899', // Pink Line
                         backgroundColor: gradientFill,
                         borderWidth: 3, 
-                        pointRadius: 4, 
+                        pointRadius: 5, 
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#2563eb',
-                        pointHoverRadius: 6,
+                        pointBorderColor: '#ec4899',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#db2777',
                         fill: true, 
-                        tension: 0.4
+                        tension: 0.4 // نعومة وانحناء الخط
                     }]
                 },
                 options: { 
@@ -486,20 +525,26 @@
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0f172a',
+                            backgroundColor: 'rgba(219, 39, 119, 0.9)', // Pink Tooltip
                             padding: 12,
                             titleFont: { family: "'Inter', sans-serif", size: 13 },
                             bodyFont: { family: "'Inter', sans-serif", size: 14, weight: 'bold' },
-                            displayColors: false
+                            displayColors: false,
+                            cornerRadius: 8
                         }
                     },
                     scales: {
-                        x: { grid: { display: false } },
+                        x: { grid: { display: false }, ticks: { color: '#6b7280' } },
                         y: { 
-                            grid: { color: '#e2e8f0', borderDash: [5, 5] },
+                            grid: { color: '#fbcfe8', borderDash: [5, 5] },
+                            ticks: { color: '#6b7280' },
                             beginAtZero: false 
                         }
-                    }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
                 }
             });
         }
