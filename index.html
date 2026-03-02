@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['api'])) {
         header('Content-Type: application/json');
+        header('Cache-Control: no-cache, no-store, must-revalidate'); // منع التخزين المؤقت لضمان المزامنة
+        header('Pragma: no-cache');
+        header('Expires: 0');
         if (file_exists($db_file)) {
             echo file_get_contents($db_file);
         } else {
@@ -374,18 +377,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     </table>
                 </div>
             </section>
-
-            <section class="card" style="margin-top: 2rem; text-align: center; border: 2px dashed var(--border-color);">
-                <h3 style="color: var(--primary-hover); margin-bottom: 0.5rem;">💾 Backup & Restore</h3>
-                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
-                    Your data is now saved securely on the server! You can still download a manual backup here.
-                </p>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="exportData()" class="btn btn-primary" style="flex: 1; min-width: 200px;">⬇️ Download Backup</button>
-                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-                    <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary" style="flex: 1; min-width: 200px;">⬆️ Restore Data</button>
-                </div>
-            </section>
         </div>
 
     </main>
@@ -409,7 +400,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         async function loadDataFromServer() {
             try {
-                const response = await fetch('?api=true');
+                // إضافة متغير للوقت لمنع التخزين المؤقت وجلب أحدث البيانات لتتزامن عبر الأجهزة
+                const response = await fetch('?api=true&_t=' + new Date().getTime(), { cache: 'no-store' });
                 let serverData = [];
                 if(response.ok) {
                     serverData = await response.json();
@@ -418,13 +410,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 let localData = [];
                 try { localData = JSON.parse(localStorage.getItem('bloodSugarReadings')) || []; } catch(e){}
                 
-                if (serverData.length === 0 && localData.length > 0) {
-                    readings = localData;
-                    await saveDataToServer(); 
-                } else if (serverData.length > 0 && localData.length > 0) {
-                    if(localData.length > serverData.length) {
+                // جعل السيرفر هو المصدر الأساسي للبيانات دائماً
+                if (response.ok) {
+                    if (serverData.length === 0 && localData.length > 0) {
                         readings = localData;
-                        await saveDataToServer();
+                        await saveDataToServer(); 
                     } else {
                         readings = serverData;
                         localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
@@ -478,41 +468,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 setDateTimeInputs();
                 document.getElementById('submitBtnText').innerHTML = '💖 Save Reading';
             }
-        }
-
-        function exportData() {
-            if(readings.length === 0) return alert("No data to export!");
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(readings));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "glucotrack_backup.json");
-            document.body.appendChild(downloadAnchorNode); 
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const importedReadings = JSON.parse(e.target.result);
-                    if (Array.isArray(importedReadings)) {
-                        readings = sortReadingsDescending(importedReadings);
-                        await saveDataToServer();
-                        updateDashboard(readings);
-                        renderTable(readings, 'allReadingsTableBody');
-                        alert("Data imported successfully! 💖");
-                        document.getElementById('importFile').value = ''; 
-                    } else {
-                        alert("Invalid file format.");
-                    }
-                } catch (err) {
-                    alert("Error reading file.");
-                }
-            };
-            reader.readAsText(file);
         }
 
         function deleteReading(id) {
