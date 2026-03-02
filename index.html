@@ -10,15 +10,15 @@
     <style>
         /* --- التصميم المطور والأنثوي (CSS) --- */
         :root {
-            --primary-color: #ec4899; /* وردي ناعم وجذاب */
-            --primary-hover: #db2777; /* وردي غامق عند التمرير */
-            --secondary-color: #fdf2f8; /* خلفية وردية فاتحة جداً للعناصر */
-            --background-color: #fef1f8; /* خلفية الموقع */
-            --surface-color: #ffffff; /* لون البطاقات */
-            --text-main: #374151; /* رمادي داكن مريح للقراءة */
+            --primary-color: #ec4899; 
+            --primary-hover: #db2777; 
+            --secondary-color: #fdf2f8; 
+            --background-color: #fef1f8; 
+            --surface-color: #ffffff; 
+            --text-main: #374151; 
             --text-muted: #6b7280;
-            --border-color: #fbcfe8; /* حدود وردية فاتحة */
-            --radius: 16px; /* زوايا دائرية أكثر نعومة */
+            --border-color: #fbcfe8; 
+            --radius: 16px; 
             --shadow-sm: 0 2px 8px rgba(236, 72, 153, 0.08);
             --shadow-md: 0 8px 20px rgba(236, 72, 153, 0.12);
             --font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -141,6 +141,27 @@
         .btn-secondary:hover { background-color: #fce7f3; border-color: var(--primary-color); color: var(--primary-color);}
         .btn-block { width: 100%; display: block; padding: 1rem; font-size: 1.1rem; border-radius: 16px;}
 
+        /* أزرار التعديل والحذف داخل الجدول */
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .btn-edit {
+            background-color: #fce7f3;
+            color: #db2777;
+            border: 1px solid #fbcfe8;
+        }
+        .btn-edit:hover { background-color: #fbcfe8; transform: translateY(-1px); }
+        .btn-delete {
+            background-color: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+        .btn-delete:hover { background-color: #fecaca; transform: translateY(-1px); }
+
         /* Summary Stats - إحصائيات بصرية */
         .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
         @media(min-width: 768px){ .summary-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -173,7 +194,6 @@
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
             background: white;
-            /* تصميم شريط التمرير للجداول */
             scrollbar-width: thin;
             scrollbar-color: var(--primary-color) var(--secondary-color);
         }
@@ -181,8 +201,8 @@
         .table-responsive::-webkit-scrollbar-track { background: var(--secondary-color); border-radius: 8px; }
         .table-responsive::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 8px; }
 
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+        table { width: 100%; border-collapse: collapse; min-width: 750px; } /* زيادة العرض لاستيعاب الأزرار */
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; vertical-align: middle; }
         th { 
             background-color: var(--secondary-color); 
             font-weight: 700; 
@@ -209,7 +229,6 @@
             .summary-card { padding: 1rem; }
             .stat-value { font-size: 1.75rem; }
             
-            /* تحسين مظهر المخطط البياني في الجوال */
             .chart-container-wrapper { height: 250px !important; }
         }
     </style>
@@ -276,7 +295,7 @@
                 <h3>📖 Reading History</h3>
                 <div class="table-responsive">
                     <table id="reportsTable">
-                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th><th>Actions</th></tr></thead>
                         <tbody id="reportsTableBody"></tbody>
                     </table>
                 </div>
@@ -309,7 +328,7 @@
                             <textarea id="readingNotes" rows="3" placeholder="Fasting, post-meal, feeling great, etc."></textarea>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-block">💖 Save Reading</button>
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtnText">💖 Save Reading</button>
                 </form>
             </section>
 
@@ -317,7 +336,7 @@
                 <h3>📝 All Readings</h3>
                 <div class="table-responsive">
                     <table id="allReadingsTable">
-                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Time</th><th>Reading (mg/dL)</th><th>mmol/L</th><th>Notes</th><th>Actions</th></tr></thead>
                         <tbody id="allReadingsTableBody"></tbody>
                     </table>
                 </div>
@@ -327,9 +346,10 @@
     </main>
 
     <script>
-        // المتغيرات الأساسية مع الحفاظ على البيانات المدخلة في المتصفح
+        // المتغيرات الأساسية مع الحفاظ على البيانات المدخلة
         let readings = JSON.parse(localStorage.getItem('bloodSugarReadings')) || [];
         let myChart = null;
+        let editingId = null; // متغير لتتبع ما إذا كنا في حالة تعديل أو إضافة جديدة
 
         // دوال مساعدة لحساب القيم والتنسيق
         const convertToMmol = (mgdl) => (mgdl / 18).toFixed(1);
@@ -345,32 +365,69 @@
             return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         };
 
-        // دالة ترتيب القراءات من الأحدث إلى الأقدم (تعتمد على التاريخ والوقت تلقائياً)
+        // دالة ترتيب القراءات من الأحدث إلى الأقدم 
         const sortReadingsDescending = (dataArray) => {
             return [...dataArray].sort((a, b) => {
                 const dateTimeA = new Date(`${a.date}T${a.time}`);
                 const dateTimeB = new Date(`${b.date}T${b.time}`);
-                return dateTimeB - dateTimeA; // الترتيب التنازلي للحصول على الأحدث بالقمة
+                return dateTimeB - dateTimeA;
             });
         };
 
         // التنقل بين الصفحتين
-        function switchView(view) {
+        function switchView(view, isEdit = false) {
             document.getElementById('reports-view').style.display = view === 'reports' ? 'block' : 'none';
             document.getElementById('add-view').style.display = view === 'add' ? 'block' : 'none';
             document.getElementById('nav-reports').className = view === 'reports' ? 'active' : '';
             document.getElementById('nav-add').className = view === 'add' ? 'active' : '';
             
-            // التمرير لأعلى الصفحة عند التبديل (مفيد للجوال)
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
             if (view === 'reports') {
                 document.getElementById('filterForm').reset();
                 updateDashboard(readings);
             }
+            
+            // في حال تم الضغط على "إضافة قراءة" من القائمة ولم نكن في وضع التعديل، يجب تصفير الفورم
+            if (view === 'add' && !isEdit) {
+                editingId = null;
+                document.getElementById('addReadingForm').reset();
+                setDateTimeInputs();
+                document.getElementById('submitBtnText').innerHTML = '💖 Save Reading';
+            }
         }
 
-        // --- منطق إضافة قراءة ---
+        // --- دوال الحذف والتعديل المضافة حديثاً ---
+        function deleteReading(id) {
+            if(confirm("Are you sure you want to delete this reading?")) {
+                readings = readings.filter(item => item.id !== id);
+                localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
+                
+                // تحديث جميع الجداول والرسوم البيانية في نفس اللحظة
+                updateDashboard(readings);
+                renderTable(sortReadingsDescending(readings), 'allReadingsTableBody');
+            }
+        }
+
+        function editReading(id) {
+            const item = readings.find(r => r.id === id);
+            if(!item) return;
+
+            // تعبئة البيانات في الفورم
+            document.getElementById('readingDate').value = item.date;
+            document.getElementById('readingTime').value = item.time;
+            document.getElementById('readingValue').value = item.reading;
+            document.getElementById('readingNotes').value = item.notes;
+
+            // تحديد الـ ID الحالي للتعديل وتغيير شكل الزر
+            editingId = id;
+            document.getElementById('submitBtnText').innerHTML = '💖 Update Reading';
+
+            // الانتقال إلى صفحة الإضافة (في وضع التعديل)
+            switchView('add', true);
+        }
+
+        // --- منطق إضافة/تحديث قراءة ---
         const dateInput = document.getElementById('readingDate');
         const timeInput = document.getElementById('readingTime');
         
@@ -390,31 +447,46 @@
             
             if (isNaN(readingVal) || readingVal <= 0) return alert("Please enter a valid numeric reading.");
 
-            // إضافة القراءة الجديدة
-            readings.push({
-                id: Date.now().toString(),
-                date: dateInput.value,
-                time: timeInput.value,
-                reading: readingVal,
-                notes: document.getElementById('readingNotes').value.trim()
-            });
+            if (editingId) {
+                // نحن في وضع التعديل: نقوم بتحديث العنصر الموجود
+                const index = readings.findIndex(r => r.id === editingId);
+                if(index !== -1) {
+                    readings[index] = {
+                        id: editingId,
+                        date: dateInput.value,
+                        time: timeInput.value,
+                        reading: readingVal,
+                        notes: document.getElementById('readingNotes').value.trim()
+                    };
+                }
+                editingId = null; // إعادة تعيين بعد التعديل
+            } else {
+                // نحن في وضع الإضافة: نضيف قراءة جديدة
+                readings.push({
+                    id: Date.now().toString(),
+                    date: dateInput.value,
+                    time: timeInput.value,
+                    reading: readingVal,
+                    notes: document.getElementById('readingNotes').value.trim()
+                });
+            }
 
-            // تحديث التخزين والجدول مع ضمان الترتيب من الأحدث للأقدم
+            // تحديث التخزين والجدول مع ضمان الترتيب
             readings = sortReadingsDescending(readings);
             localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
             
             renderTable(readings, 'allReadingsTableBody');
+            updateDashboard(readings); // نحدث صفحة التقارير لتكون جاهزة في الخلفية
             this.reset();
             setDateTimeInputs();
             
             // تأثير بصري لطيف عند الحفظ
-            const btn = this.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
+            const btn = document.getElementById('submitBtnText');
             btn.innerHTML = 'Saved Successfully 💖';
             btn.style.backgroundColor = '#10b981';
             btn.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.3)';
             setTimeout(() => {
-                btn.innerHTML = originalText;
+                btn.innerHTML = '💖 Save Reading'; // إرجاع الزر لشكله الأصلي
                 btn.style.backgroundColor = '';
                 btn.style.boxShadow = '';
             }, 2000);
@@ -444,22 +516,19 @@
 
         // تحديث لوحة التحكم
         function updateDashboard(data) {
-            // ضمان الترتيب التلقائي من الأحدث للأقدم داخل الجداول
             const sortedData = sortReadingsDescending(data);
             
             renderTable(sortedData, 'reportsTableBody');
             updateSummaryStats(sortedData);
-            
-            // المخطط البياني يتطلب عرض الزمن تسلسلياً (من الأقدم للأحدث ليقرأ من اليسار لليمين)
             renderChart([...sortedData].reverse());
         }
 
-        // رسم الجداول
+        // رسم الجداول مع إضافة أزرار الإجراءات (Edit / Delete)
         function renderTable(data, tbodyId) {
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #db2777; padding: 2rem;">No readings found for this period.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #db2777; padding: 2rem;">No readings found for this period.</td></tr>';
                 return;
             }
             data.forEach(item => {
@@ -469,6 +538,10 @@
                     <td><strong>${item.reading}</strong></td>
                     <td>${convertToMmol(item.reading)}</td>
                     <td>${item.notes || '-'}</td>
+                    <td>
+                        <button onclick="editReading('${item.id}')" class="btn btn-sm btn-edit">Edit</button>
+                        <button onclick="deleteReading('${item.id}')" class="btn btn-sm btn-delete">Delete</button>
+                    </td>
                 </tr>`;
             });
         }
@@ -490,14 +563,13 @@
             document.getElementById('minMgdl').textContent = Math.min(...vals);
         }
 
-        // رسم المخطط البياني (Chart.js) باللون الوردي المتدرج
+        // رسم المخطط البياني
         function renderChart(data) {
             if (myChart) myChart.destroy();
             const ctx = document.getElementById('bloodSugarChart').getContext('2d');
             
-            // التدرج اللوني الأنثوي (الوردي) للمخطط
             const gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientFill.addColorStop(0, 'rgba(236, 72, 153, 0.4)'); // Pink 500 opacity
+            gradientFill.addColorStop(0, 'rgba(236, 72, 153, 0.4)'); 
             gradientFill.addColorStop(1, 'rgba(236, 72, 153, 0.0)');
 
             myChart = new Chart(ctx, {
@@ -507,7 +579,7 @@
                     datasets: [{
                         label: 'Blood Sugar (mg/dL)',
                         data: data.map(i => i.reading),
-                        borderColor: '#ec4899', // Pink Line
+                        borderColor: '#ec4899', 
                         backgroundColor: gradientFill,
                         borderWidth: 3, 
                         pointRadius: 5, 
@@ -516,7 +588,7 @@
                         pointHoverRadius: 7,
                         pointHoverBackgroundColor: '#db2777',
                         fill: true, 
-                        tension: 0.4 // نعومة وانحناء الخط
+                        tension: 0.4 
                     }]
                 },
                 options: { 
@@ -525,7 +597,7 @@
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: 'rgba(219, 39, 119, 0.9)', // Pink Tooltip
+                            backgroundColor: 'rgba(219, 39, 119, 0.9)',
                             padding: 12,
                             titleFont: { family: "'Inter', sans-serif", size: 13 },
                             bodyFont: { family: "'Inter', sans-serif", size: 14, weight: 'bold' },
