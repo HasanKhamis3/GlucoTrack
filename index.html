@@ -2,12 +2,26 @@
 // ==========================================
 // قسم السيرفر (Backend) - لمعالجة وحفظ البيانات
 // ==========================================
-$db_file = 'database.json';
+// تحديد مسار الملف بشكل دقيق لتفادي مشاكل الاستضافة والصلاحيات
+$db_file = __DIR__ . DIRECTORY_SEPARATOR . 'database.json';
+
+// تفعيل CORS للسماح بمزامنة البيانات من أجهزة متعددة
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // استقبال القراءات الجديدة وحفظها في قاعدة البيانات على السيرفر
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = file_get_contents('php://input');
-    file_put_contents($db_file, $data);
+    // حفظ البيانات فقط إذا كانت بصيغة صحيحة لتجنب مسح الملف بالخطأ
+    if (!empty($data) && json_decode($data) !== null) {
+        file_put_contents($db_file, $data);
+    }
     header('Content-Type: application/json');
     // تم استخدام طريقة كتابة لا تحتوي على علامة الإغلاق لمنع ظهور النص في المتصفح
     $response = array();
@@ -24,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         header('Pragma: no-cache');
         header('Expires: 0');
         if (file_exists($db_file)) {
-            echo file_get_contents($db_file);
+            $content = file_get_contents($db_file);
+            echo $content ? $content : '[]';
         } else {
             echo '[]';
         }
@@ -400,8 +415,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         async function loadDataFromServer() {
             try {
-                // إضافة متغير للوقت لمنع التخزين المؤقت وجلب أحدث البيانات لتتزامن عبر الأجهزة
-                const response = await fetch('?api=true&_t=' + new Date().getTime(), { cache: 'no-store' });
+                // استخدام الرابط الصحيح للصفحة لضمان الاتصال بالسيرفر 
+                const currentUrl = window.location.href.split('?')[0];
+                const response = await fetch(currentUrl + '?api=true&_t=' + new Date().getTime(), { cache: 'no-store' });
+                
                 let serverData = [];
                 if(response.ok) {
                     serverData = await response.json();
@@ -410,17 +427,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 let localData = [];
                 try { localData = JSON.parse(localStorage.getItem('bloodSugarReadings')) || []; } catch(e){}
                 
-                // جعل السيرفر هو المصدر الأساسي للبيانات دائماً
                 if (response.ok) {
-                    if (serverData.length === 0 && localData.length > 0) {
-                        readings = localData;
+                    // دمج البيانات من السيرفر والمحلي لضمان عدم ضياع أي قراءات تمت على أجهزة أخرى
+                    const mergedMap = new Map();
+                    serverData.forEach(item => mergedMap.set(item.id, item));
+                    localData.forEach(item => {
+                        if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
+                    });
+                    
+                    readings = Array.from(mergedMap.values());
+                    
+                    // إذا كان لدينا بيانات محلية جديدة غير موجودة في السيرفر، نقوم برفعها
+                    if (readings.length > serverData.length) {
                         await saveDataToServer(); 
                     } else {
-                        readings = serverData;
                         localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
                     }
                 } else {
-                    readings = serverData.length > 0 ? serverData : [];
+                    readings = serverData.length > 0 ? serverData : localData;
                     localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
                 }
                 
@@ -439,7 +463,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         async function saveDataToServer() {
             localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
             try {
-                await fetch('?api=true', {
+                const currentUrl = window.location.href.split('?')[0];
+                await fetch(currentUrl + '?api=true', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(readings)
@@ -470,10 +495,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
 
-        function deleteReading(id) {
+        async function deleteReading(id) {
             if(confirm("Are you sure you want to delete this reading?")) {
+                await loadDataFromServer(); // جلب البيانات الأحدث قبل الحذف لمنع مسح بيانات جهاز آخر بالخطأ
                 readings = readings.filter(item => item.id !== id);
-                saveDataToServer();
+                await saveDataToServer();
                 updateDashboard(readings);
                 renderTable(sortReadingsDescending(readings), 'allReadingsTableBody');
             }
@@ -510,6 +536,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             const readingVal = parseFloat(document.getElementById('readingValue').value);
             
             if (isNaN(readingVal) || readingVal <= 0) return alert("Please enter a valid numeric reading.");
+
+            await loadDataFromServer(); // المزامنة أولاً قبل الحفظ لدمج أي قراءات مسجلة من أجهزة أخرى
 
             if (editingId) {
                 const index = readings.findIndex(r => r.id === editingId);
