@@ -1,52 +1,3 @@
-<?php
-// ==========================================
-// قسم السيرفر (Backend) - لمعالجة وحفظ البيانات
-// ==========================================
-// تحديد مسار الملف بشكل دقيق لتفادي مشاكل الاستضافة والصلاحيات
-$db_file = __DIR__ . DIRECTORY_SEPARATOR . 'database.json';
-
-// تفعيل CORS للسماح بمزامنة البيانات من أجهزة متعددة
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Cache-Control, Pragma');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-// استقبال القراءات الجديدة وحفظها في قاعدة البيانات على السيرفر
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = file_get_contents('php://input');
-    // حفظ البيانات فقط إذا كانت بصيغة صحيحة لتجنب مسح الملف بالخطأ
-    if (!empty($data) && json_decode($data) !== null) {
-        file_put_contents($db_file, $data);
-    }
-    header('Content-Type: application/json');
-    // تم استخدام طريقة كتابة لا تحتوي على علامة الإغلاق لمنع ظهور النص في المتصفح
-    $response = array();
-    $response['status'] = 'success';
-    echo json_encode($response);
-    exit;
-} 
-
-// إرسال القراءات المحفوظة عند طلبها
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_GET['api'])) {
-        header('Content-Type: application/json');
-        header('Cache-Control: no-cache, no-store, must-revalidate'); // منع التخزين المؤقت لضمان المزامنة
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        if (file_exists($db_file)) {
-            $content = file_get_contents($db_file);
-            echo $content ? $content : '[]';
-        } else {
-            echo '[]';
-        }
-        exit;
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -397,9 +348,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     </main>
 
     <script>
+        // ==========================================
+        // إعدادات التزامن مع مستودع GitHub الخاص بك
+        // ==========================================
+        // قم بتعديل هذه البيانات لتتطابق مع حسابك ليعمل التزامن بين الأجهزة
+        const GITHUB_USERNAME = 'hasankhamis3'; // اسم المستخدم الخاص بك على GitHub
+        const REPO_NAME = 'hasankhamis3.github.io'; // اسم المستودع (Repository)
+        const FILE_PATH = 'database.json'; // اسم الملف الذي سيتم حفظ البيانات فيه
+        const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN_HERE'; // ضع التوكن الخاص بك هنا
+        
+        const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
+
         let readings = [];
         let myChart = null;
         let editingId = null;
+        let fileSha = ''; // يتم استخدامه لتحديث الملف في GitHub
 
         const convertToMmol = (mgdl) => (mgdl / 18).toFixed(1);
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -413,38 +376,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return [...dataArray].sort((a, b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
         };
 
+        // دالة مخصصة لفك تشفير بيانات GitHub
+        function decodeBase64(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+
+        // دالة مخصصة لتشفير البيانات وإرسالها لـ GitHub
+        function encodeBase64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                return String.fromCharCode('0x' + p1);
+            }));
+        }
+
         async function loadDataFromServer() {
+            let localData = [];
+            try { localData = JSON.parse(localStorage.getItem('bloodSugarReadings')) || []; } catch(e){}
+
+            if (GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
+                console.warn("لم يتم وضع GITHUB_TOKEN. التطبيق يعمل على التخزين المحلي فقط ولن يتزامن.");
+                readings = sortReadingsDescending(localData);
+                renderTable(readings, 'allReadingsTableBody');
+                updateDashboard(readings);
+                return;
+            }
+
             try {
-                // استخدام الرابط الصحيح للصفحة لضمان الاتصال بالسيرفر 
-                const currentUrl = window.location.href.split('?')[0];
-                const response = await fetch(currentUrl + '?api=true&_t=' + new Date().getTime(), { cache: 'no-store' });
+                // جلب بيانات الملف من GitHub
+                const response = await fetch(API_URL + '?t=' + new Date().getTime(), {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 let serverData = [];
                 if(response.ok) {
-                    serverData = await response.json();
+                    const result = await response.json();
+                    fileSha = result.sha; // نحتاج هذا الرقم لنتمكن من تعديل الملف لاحقاً
+                    if (result.content) {
+                        const decodedContent = decodeBase64(result.content);
+                        serverData = JSON.parse(decodedContent) || [];
+                    }
+                } else if (response.status === 404) {
+                    // الملف غير موجود بعد، سنقوم بإنشائه عند أول عملية حفظ
+                    console.log("ملف قاعدة البيانات غير موجود في GitHub بعد، سيتم إنشاؤه لاحقاً.");
                 }
                 
-                let localData = [];
-                try { localData = JSON.parse(localStorage.getItem('bloodSugarReadings')) || []; } catch(e){}
+                // دمج البيانات
+                const mergedMap = new Map();
+                serverData.forEach(item => mergedMap.set(item.id, item));
+                localData.forEach(item => {
+                    if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
+                });
                 
-                if (response.ok) {
-                    // دمج البيانات من السيرفر والمحلي لضمان عدم ضياع أي قراءات تمت على أجهزة أخرى
-                    const mergedMap = new Map();
-                    serverData.forEach(item => mergedMap.set(item.id, item));
-                    localData.forEach(item => {
-                        if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
-                    });
-                    
-                    readings = Array.from(mergedMap.values());
-                    
-                    // إذا كان لدينا بيانات محلية جديدة غير موجودة في السيرفر، نقوم برفعها
-                    if (readings.length > serverData.length) {
-                        await saveDataToServer(); 
-                    } else {
-                        localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
-                    }
+                readings = Array.from(mergedMap.values());
+                
+                if (readings.length > serverData.length) {
+                    await saveDataToServer(); 
                 } else {
-                    readings = serverData.length > 0 ? serverData : localData;
                     localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
                 }
                 
@@ -452,9 +444,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 renderTable(readings, 'allReadingsTableBody');
                 updateDashboard(readings);
             } catch(e) {
-                console.error("Connection failed, using local backup.", e);
-                readings = JSON.parse(localStorage.getItem('bloodSugarReadings')) || [];
-                readings = sortReadingsDescending(readings);
+                console.error("فشل الاتصال بـ GitHub، يتم استخدام النسخة المحلية.", e);
+                readings = sortReadingsDescending(localData);
                 renderTable(readings, 'allReadingsTableBody');
                 updateDashboard(readings);
             }
@@ -462,15 +453,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         async function saveDataToServer() {
             localStorage.setItem('bloodSugarReadings', JSON.stringify(readings));
+            
+            if (GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') return;
+
             try {
-                const currentUrl = window.location.href.split('?')[0];
-                await fetch(currentUrl + '?api=true', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(readings)
+                const contentEncoded = encodeBase64(JSON.stringify(readings, null, 2));
+                const bodyData = {
+                    message: "تحديث قراءات السكر عبر التطبيق",
+                    content: contentEncoded,
+                };
+                
+                // إذا كان الملف موجوداً سابقاً، يجب إرسال الـ SHA الخاص به
+                if (fileSha) {
+                    bodyData.sha = fileSha;
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: { 
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
                 });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    fileSha = result.content.sha; // تحديث الـ SHA للعملية القادمة
+                } else {
+                    console.error("فشل في حفظ البيانات إلى GitHub.");
+                }
             } catch(e) {
-                console.error("Failed to save to server.", e);
+                console.error("خطأ أثناء الاتصال بـ GitHub للحفظ.", e);
             }
         }
 
@@ -497,7 +512,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         async function deleteReading(id) {
             if(confirm("Are you sure you want to delete this reading?")) {
-                await loadDataFromServer(); // جلب البيانات الأحدث قبل الحذف لمنع مسح بيانات جهاز آخر بالخطأ
+                const btn = document.querySelector(`button[onclick="deleteReading('${id}')"]`);
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '...';
+                
+                await loadDataFromServer(); 
                 readings = readings.filter(item => item.id !== id);
                 await saveDataToServer();
                 updateDashboard(readings);
@@ -537,7 +556,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             
             if (isNaN(readingVal) || readingVal <= 0) return alert("Please enter a valid numeric reading.");
 
-            await loadDataFromServer(); // المزامنة أولاً قبل الحفظ لدمج أي قراءات مسجلة من أجهزة أخرى
+            const btn = document.getElementById('submitBtnText');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'جاري الحفظ والمزامنة... ⏳';
+            btn.style.opacity = '0.8';
+
+            await loadDataFromServer(); 
 
             if (editingId) {
                 const index = readings.findIndex(r => r.id === editingId);
@@ -569,10 +593,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             this.reset();
             setDateTimeInputs();
             
-            const btn = document.getElementById('submitBtnText');
             btn.innerHTML = 'Saved Successfully 💖';
             btn.style.backgroundColor = '#10b981';
             btn.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.3)';
+            btn.style.opacity = '1';
+            
             setTimeout(() => {
                 btn.innerHTML = '💖 Save Reading'; 
                 btn.style.backgroundColor = '';
